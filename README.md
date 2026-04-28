@@ -31,7 +31,6 @@ MyPCTool/
 Windows 환경에서 다음을 실행하세요.
 
 ```bash
-cd c:\Users\USER\Desktop\mojuk\AI_assignment\MyPCTool
 python -m pip install -r requirements.txt
 python main.py
 ```
