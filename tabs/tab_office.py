@@ -101,10 +101,14 @@ def build(frame):
                     excel.Visible = False
                     excel.DisplayAlerts = False
                     try:
-                        workbook = excel.Workbooks.Open(abs_file_path, ReadOnly=False)
-                        # SaveAs 파라미터: (filename, fileformat, password, writerespassword)
-                        # fileformat 51 = xlOpenXMLWorkbook (표준 xlsx)
-                        workbook.SaveAs(abs_output_path, 51, password, "")
+                        workbook = excel.Workbooks.Open(Filename=abs_file_path, ReadOnly=False)
+                        # SaveAs 키워드 인자를 사용하여 암호 설정
+                        workbook.SaveAs(Filename=abs_output_path,
+                                        FileFormat=51,
+                                        Password=password,
+                                        WriteResPassword="",
+                                        ReadOnlyRecommended=False,
+                                        CreateBackup=False)
                         workbook.Close(SaveChanges=False)
                     finally:
                         excel.Quit()
@@ -115,11 +119,17 @@ def build(frame):
                     word.Visible = False
                     try:
                         doc = word.Documents.Open(FileName=abs_file_path, ReadOnly=False, ConfirmConversions=False)
-                        # Document.SaveAs() 파라미터 (순위적 인자): 
-                        # SaveAs(Filename, FileFormat, LockComments, Password, AddToRecentFiles, 
-                        #        WritePassword, ReadOnlyRecommended, EmbedTrueTypeFonts)
-                        # FileFormat 16 = wdFormatDocX (표준 docx)
-                        doc.SaveAs2(FileName=abs_output_path, FileFormat=16, Password=password, WritePassword="")
+                        # Word는 문서 객체의 Password 속성을 설정해야 열기 암호가 적용됩니다.
+                        try:
+                            doc.Password = password
+                            doc.WritePassword = ""
+                        except Exception:
+                            pass
+                        doc.SaveAs2(FileName=abs_output_path,
+                                    FileFormat=16,
+                                    Password=password,
+                                    WritePassword="",
+                                    ReadOnlyRecommended=False)
                         doc.Close(SaveChanges=False)
                     finally:
                         word.Quit()
