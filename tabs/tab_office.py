@@ -20,10 +20,9 @@ def build(frame):
         file_path = filedialog.askopenfilename(
             title="Office 파일 선택",
             filetypes=[
-                ("Office 문서", "*.xlsx *.docx *.pptx"),
+                ("Office 문서", "*.xlsx *.docx"),
                 ("Excel", "*.xlsx"),
                 ("Word", "*.docx"),
-                ("PowerPoint", "*.pptx"),
                 ("All files", "*.*")
             ]
         )
@@ -52,7 +51,7 @@ def build(frame):
     
     ctk.CTkLabel(
         info_frame,
-        text="지원 형식: .xlsx, .docx, .pptx | 암호화된 파일은 'locked_' 접두사로 저장됩니다. (Windows 환경 필요)",
+        text="지원 형식: .xlsx (Excel), .docx (Word) | 암호화된 파일은 'locked_' 접두사로 저장됩니다.",
         text_color="gray",
         wraplength=700
     ).pack(side="left")
@@ -78,7 +77,7 @@ def build(frame):
             return
         
         # 지원 형식 확인
-        supported_extensions = [".xlsx", ".docx", ".pptx"]
+        supported_extensions = [".xlsx", ".docx"]
         file_ext = Path(file_path).suffix.lower()
         if file_ext not in supported_extensions:
             messagebox.showerror("오류", f"지원하지 않는 형식입니다.\n지원 형식: {', '.join(supported_extensions)}")
@@ -103,8 +102,9 @@ def build(frame):
                     excel.DisplayAlerts = False
                     try:
                         workbook = excel.Workbooks.Open(abs_file_path, ReadOnly=False)
-                        # Excel의 SaveAs 메서드: (filename, fileformat, password)
-                        workbook.SaveAs(abs_output_path, FileFormat=51, Password=password)
+                        # SaveAs 파라미터: (filename, fileformat, password, writerespassword)
+                        # fileformat 51 = xlOpenXMLWorkbook (표준 xlsx)
+                        workbook.SaveAs(abs_output_path, 51, password, "")
                         workbook.Close(SaveChanges=False)
                     finally:
                         excel.Quit()
@@ -114,22 +114,15 @@ def build(frame):
                     word = win32com.client.Dispatch("Word.Application")
                     word.Visible = False
                     try:
-                        doc = word.Documents.Open(FileName=abs_file_path, ReadOnly=False)
-                        doc.SaveAs(FileName=abs_output_path, AddToRecentFiles=False, Password=password)
+                        doc = word.Documents.Open(FileName=abs_file_path, ReadOnly=False, ConfirmConversions=False)
+                        # Document.SaveAs() 파라미터 (순위적 인자): 
+                        # SaveAs(Filename, FileFormat, LockComments, Password, AddToRecentFiles, 
+                        #        WritePassword, ReadOnlyRecommended, EmbedTrueTypeFonts)
+                        # FileFormat 16 = wdFormatDocX (표준 docx)
+                        doc.SaveAs2(FileName=abs_output_path, FileFormat=16, Password=password, WritePassword="")
                         doc.Close(SaveChanges=False)
                     finally:
                         word.Quit()
-                    
-                elif file_ext == ".pptx":
-                    # PowerPoint 암호화
-                    ppt = win32com.client.Dispatch("PowerPoint.Application")
-                    try:
-                        # PowerPoint는 Visible 속성을 숨길 수 없으므로 생략
-                        presentation = ppt.Presentations.Open(abs_file_path, ReadOnly=False, Untitled=False, DisplayAlerts=2)
-                        presentation.SaveAs(abs_output_path, FileFormat=12, Password=password)
-                        presentation.Close(SaveChanges=False)
-                    finally:
-                        ppt.Quit()
                 
                 result_label.configure(text="암호화 완료")
                 messagebox.showinfo(

@@ -4,6 +4,32 @@ import platform
 import socket
 import sys
 import customtkinter as ctk
+import winreg
+
+def get_windows_version():
+    """Windows 버전을 정확히 감지 (Windows 11 구분)"""
+    try:
+        import winreg
+        
+        reg_path = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion"
+        key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path)
+        
+        # CurrentBuild 값 읽기 (Windows 11은 22000 이상)
+        current_build = int(winreg.QueryValueEx(key, "CurrentBuild")[0])
+        product_name = winreg.QueryValueEx(key, "ProductName")[0]
+        
+        winreg.CloseKey(key)
+        
+        # ProductName이 "Windows 11"을 포함하거나 빌드 >= 22000이면 Windows 11
+        if "Windows 11" in product_name or current_build >= 22000:
+            return f"Windows 11 (Build {current_build})"
+        elif "Windows 10" in product_name:
+            return f"Windows 10 (Build {current_build})"
+        else:
+            return product_name
+    except:
+        # 레지스트리 접근 실패 시 platform.platform() 사용
+        return platform.system() + " " + platform.release()
 
 def build(frame):
     """시스템 정보 탭 UI 빌드"""
@@ -17,7 +43,7 @@ def build(frame):
     info_frame.pack(fill="x", padx=20, pady=10)
     
     # OS 정보
-    os_name = platform.system() + " " + platform.release()
+    os_name = get_windows_version()
     computer_name = socket.gethostname()
     python_version = f"Python {sys.version.split()[0]}"
     
